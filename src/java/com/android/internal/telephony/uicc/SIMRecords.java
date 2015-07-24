@@ -51,8 +51,6 @@ public class SIMRecords extends IccRecords {
     VoiceMailConstants mVmConfig;
 
 
-    SpnOverride mSpnOverride;
-
     // ***** Cached SIM State; cleared on channel close
 
     private int mCallForwardingStatus;
@@ -91,8 +89,7 @@ public class SIMRecords extends IccRecords {
     public String toString() {
         return "SimRecords: " + super.toString()
                 + " mVmConfig" + mVmConfig
-                + " mSpnOverride=" + "mSpnOverride"
-                + " callForwardingEnabled=" + mCallForwardingStatus
+                + " callForwardingEnabled=" + mCallForwardingEnabled
                 + " spnState=" + mSpnState
                 + " mCphsInfo=" + mCphsInfo
                 + " mCspPlmnEnabled=" + mCspPlmnEnabled
@@ -192,7 +189,6 @@ public class SIMRecords extends IccRecords {
         mAdnCache = new AdnRecordCache(mFh);
 
         mVmConfig = new VoiceMailConstants();
-        mSpnOverride = new SpnOverride();
 
         mRecordsRequested = false;  // No load request is made till SIM ready
 
@@ -1445,15 +1441,6 @@ public class SIMRecords extends IccRecords {
 
     //***** Private methods
 
-    private void setSpnFromConfig(String carrier) {
-        if (mSpnOverride.containsCarrier(carrier)) {
-            setServiceProviderName(mSpnOverride.getSpn(carrier));
-            mTelephonyManager.setSimOperatorNameForPhone(
-                    mParentApp.getPhoneId(), getServiceProviderName());
-        }
-    }
-
-
     private void setVoiceMailByCountry (String spn) {
         if (mVmConfig.containsCarrier(spn)) {
             mIsVoiceMailFixed = true;
@@ -1879,8 +1866,7 @@ public class SIMRecords extends IccRecords {
         pw.println(" extends:");
         super.dump(fd, pw, args);
         pw.println(" mVmConfig=" + mVmConfig);
-        pw.println(" mSpnOverride=" + mSpnOverride);
-        pw.println(" mCallForwardingStatus=" + mCallForwardingStatus);
+        pw.println(" mCallForwardingEnabled=" + mCallForwardingEnabled);
         pw.println(" mSpnState=" + mSpnState);
         pw.println(" mCphsInfo=" + mCphsInfo);
         pw.println(" mCspPlmnEnabled=" + mCspPlmnEnabled);
