@@ -514,23 +514,11 @@ public class DctController extends Handler {
             String specifier = requestInfo.request.networkCapabilities
                 .getNetworkSpecifier();
             if (specifier == null || specifier.equals("")) {
-                if (requestInfo.executed) {
-                    String apn = apnForNetworkRequest(requestInfo.request);
-                    logd("[setDataSubId] subId =" + dataSubId);
-                    requestInfo.log(
-                            "DctController.onSettingsChange releasing request");
-                    for (int i = 0; i < mPhoneNum; i++) {
-                        PhoneBase phoneBase =
-                            (PhoneBase)mPhones[i].getActivePhone();
-                        DcTrackerBase dcTracker = phoneBase.mDcTracker;
-                        dcTracker.decApnRefCount(apn, requestInfo.getLog());
-                        requestInfo.executed = false;
-                    }
-                }
+                onReleaseRequest(requestInfo);
             }
         }
     }
-
+    
     protected void onSettingsChanged() {
         //Sub Selection
         int dataSubId = mSubController.getDefaultDataSubId();
@@ -556,7 +544,6 @@ public class DctController extends Handler {
     }
 
     protected int getTopPriorityRequestPhoneId() {
-    private int getTopPriorityRequestPhoneId() {
         String topSubId = null;
         int priority = -1;
         int subId;

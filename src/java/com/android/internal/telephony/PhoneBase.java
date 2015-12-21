@@ -2745,15 +2745,6 @@ public abstract class PhoneBase extends Handler implements Phone {
     protected boolean shallDialOnCircuitSwitch(Bundle extras) {
             return (extras != null && extras.getInt(QtiVideoCallConstants.EXTRA_CALL_DOMAIN,
                     QtiVideoCallConstants.DOMAIN_AUTOMATIC) == QtiVideoCallConstants.DOMAIN_CS);
-
-    protected boolean isMatchGid(String gid) {
-        String gid1 = getGroupIdLevel1();
-        int gidLength = gid.length();
-        if (!TextUtils.isEmpty(gid1) && (gid1.length() >= gidLength)
-                && gid1.substring(0, gidLength).equalsIgnoreCase(gid)) {
-            return true;
-        }
-        return false;
     }
 
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {

@@ -86,11 +86,11 @@ public class SIMRecords extends IccRecords {
 
     UsimServiceTable mUsimServiceTable;
 
-    @Override
+   @Override
     public String toString() {
         return "SimRecords: " + super.toString()
                 + " mVmConfig" + mVmConfig
-                + " callForwardingEnabled=" + mCallForwardingEnabled
+                + " callForwardingEnabled=" + mCallForwardingStatus
                 + " spnState=" + mSpnState
                 + " mCphsInfo=" + mCphsInfo
                 + " mCspPlmnEnabled=" + mCspPlmnEnabled
@@ -100,7 +100,7 @@ public class SIMRecords extends IccRecords {
                 + " mEfCfis=" + mEfCfis
                 + " getOperatorNumeric=" + getOperatorNumeric();
     }
-
+    
     // ***** Constants
 
     // From TS 51.011 EF[SPDI] section
@@ -1881,7 +1881,7 @@ public class SIMRecords extends IccRecords {
         pw.println(" extends:");
         super.dump(fd, pw, args);
         pw.println(" mVmConfig=" + mVmConfig);
-        pw.println(" mCallForwardingEnabled=" + mCallForwardingEnabled);
+        pw.println(" mCallForwardingStatus=" + mCallForwardingStatus);
         pw.println(" mSpnState=" + mSpnState);
         pw.println(" mCphsInfo=" + mCphsInfo);
         pw.println(" mCspPlmnEnabled=" + mCspPlmnEnabled);
