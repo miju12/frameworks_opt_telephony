@@ -2850,6 +2850,13 @@ public final class Telephony {
         public static final String VISIT_AREA = "visit_area";
 
         /**
+         * Is this APN visible to the user?
+         * <p>Type: INTEGER (boolean) </p>
+         * @hide
+         */
+        public static final String USER_VISIBLE = "user_visible";
+
+        /**
          * Following are possible values for the EDITED field
          * @hide
          */
