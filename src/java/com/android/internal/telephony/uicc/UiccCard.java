@@ -19,6 +19,8 @@ package com.android.internal.telephony.uicc;
 import static android.Manifest.permission.READ_PHONE_STATE;
 import android.app.ActivityManagerNative;
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -68,6 +70,9 @@ public class UiccCard {
     protected static final String LOG_TAG = "UiccCard";
     protected static final boolean DBG = true;
 
+    public static final String EXTRA_ICC_CARD_ADDED =
+            "com.android.internal.telephony.uicc.ICC_CARD_ADDED";
+
     private static final String OPERATOR_BRAND_OVERRIDE_PREFIX = "operator_branding_";
 
     private final Object mLock = new Object();
@@ -83,7 +88,8 @@ public class UiccCard {
     private CatService mCatService;
     private RadioState mLastRadioState =  RadioState.RADIO_UNAVAILABLE;
     private UiccCarrierPrivilegeRules mCarrierPrivilegeRules;
-    private boolean m3GPPAppActivated, m3GPP2AppActivated;
+    private boolean mDefaultAppsActivated;
+    private UICCConfig mUICCConfig = null;
 
     private RegistrantList mAbsentRegistrants = new RegistrantList();
     private RegistrantList mCarrierPrivilegeRegistrants = new RegistrantList();
@@ -129,6 +135,7 @@ public class UiccCard {
             mCatService = null;
             mUiccApplications = null;
             mCarrierPrivilegeRules = null;
+            mUICCConfig = null;
         }
     }
 
@@ -144,6 +151,8 @@ public class UiccCard {
             mCi = ci;
 
             //update applications
+            if (mUICCConfig == null)
+                mUICCConfig = new UICCConfig();
             if (DBG) log(ics.mApplications.length + " applications");
             for ( int i = 0; i < mUiccApplications.length; i++) {
                 if (mUiccApplications[i] == null) {
@@ -191,36 +200,17 @@ public class UiccCard {
                     mHandler.sendMessage(mHandler.obtainMessage(EVENT_CARD_ADDED, null));
                 }
             }
-            if (mGsmUmtsSubscriptionAppIndex < 0
-                    && mCdmaSubscriptionAppIndex < 0
-                    && mCardState == CardState.CARDSTATE_PRESENT
-                    && mCi.needsOldRilFeature("simactivation")) {
-                // Activate/Deactivate first 3GPP and 3GPP2 app in the SIM, if available
-                for (int i = 0; i < mUiccApplications.length; i++) {
-                    if (mUiccApplications[i] == null) {
-                        continue;
+            if (mCi.needsOldRilFeature("simactivation")) {
+                if (mCardState == CardState.CARDSTATE_PRESENT) {
+                    if (!mDefaultAppsActivated) {
+                        activateDefaultApps();
+                        mDefaultAppsActivated = true;
                     }
-
-                    AppType appType = mUiccApplications[i].getType();
-                    if (!m3GPPAppActivated &&
-                            (appType == AppType.APPTYPE_USIM || appType == AppType.APPTYPE_SIM)) {
-                        mCi.setUiccSubscription(i, true, null);
-                        m3GPPAppActivated = true;
-                    } else if (!m3GPP2AppActivated &&
-                            (appType == AppType.APPTYPE_CSIM || appType == AppType.APPTYPE_RUIM)) {
-                        mCi.setUiccSubscription(i, true, null);
-                        m3GPP2AppActivated = true;
-                    }
-
-                    if (m3GPPAppActivated && m3GPP2AppActivated) {
-                        break;
-                    }
+                } else {
+                    // SIM removed, reset activation flag to make sure
+                    // to re-run the activation at the next insertion
+                    mDefaultAppsActivated = false;
                 }
-            } else {
-                // SIM removed, reset activation flags to make sure
-                // to re-run the activation at the next insertion
-                m3GPPAppActivated = false;
-                m3GPP2AppActivated = false;
             }
 
             mLastRadioState = radioState;
@@ -288,6 +278,34 @@ public class UiccCard {
         return index;
     }
 
+    private void activateDefaultApps() {
+        int gsmIndex = mGsmUmtsSubscriptionAppIndex;
+        int cdmaIndex = mCdmaSubscriptionAppIndex;
+
+        if (gsmIndex < 0 || cdmaIndex < 0) {
+            for (int i = 0; i < mUiccApplications.length; i++) {
+                if (mUiccApplications[i] == null) {
+                    continue;
+                }
+
+                AppType appType = mUiccApplications[i].getType();
+                if (gsmIndex < 0
+                        && (appType == AppType.APPTYPE_USIM || appType == AppType.APPTYPE_SIM)) {
+                    gsmIndex = i;
+                } else if (cdmaIndex < 0 &&
+                        (appType == AppType.APPTYPE_CSIM || appType == AppType.APPTYPE_RUIM)) {
+                    cdmaIndex = i;
+                }
+            }
+        }
+        if (gsmIndex >= 0) {
+            mCi.setUiccSubscription(gsmIndex, true, null);
+        }
+        if (cdmaIndex >= 0) {
+            mCi.setUiccSubscription(cdmaIndex, true, null);
+        }
+    }
+
     /**
      * Notifies handler of any transition into State.ABSENT
      */
@@ -333,7 +351,7 @@ public class UiccCard {
     private void onIccSwap(boolean isAdded) {
 
         boolean isHotSwapSupported = mContext.getResources().getBoolean(
-                com.android.internal.R.bool.config_hotswapCapable);
+                R.bool.config_hotswapCapable);
 
         if (isHotSwapSupported) {
             log("onIccSwap: isHotSwapSupported is true, don't prompt for rebooting");
@@ -341,7 +359,26 @@ public class UiccCard {
         }
         log("onIccSwap: isHotSwapSupported is false, prompt for rebooting");
 
+        promptForRestart(isAdded);
+    }
+
+    private void promptForRestart(boolean isAdded) {
         synchronized (mLock) {
+            final Resources res = mContext.getResources();
+            final String dialogComponent = res.getString(
+                    R.string.config_iccHotswapPromptForRestartDialogComponent);
+            if (dialogComponent != null) {
+                Intent intent = new Intent().setComponent(ComponentName.unflattenFromString(
+                        dialogComponent)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        .putExtra(EXTRA_ICC_CARD_ADDED, isAdded);
+                try {
+                    mContext.startActivity(intent);
+                    return;
+                } catch (ActivityNotFoundException e) {
+                    loge("Unable to find ICC hotswap prompt for restart activity: " + e);
+                }
+            }
+
             // TODO: Here we assume the device can't handle SIM hot-swap
             //      and has to reboot. We may want to add a property,
             //      e.g. REBOOT_ON_SIM_SWAP, to indicate if modem support
@@ -678,6 +715,10 @@ public class UiccCard {
             }
         }
         return null;
+    }
+
+    public UICCConfig getUICCConfig() {
+        return mUICCConfig;
     }
 
     private void log(String msg) {
