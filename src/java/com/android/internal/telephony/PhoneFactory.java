@@ -547,11 +547,8 @@ public class PhoneFactory {
         return sPhoneSwitcher;
     }
     //end
-<<<<<<< HEAD
 
     public static SubscriptionInfoUpdater getSubscriptionInfoUpdater() {
         return sSubInfoRecordUpdater;
     }
-=======
->>>>>>> 59c45f50b... [OP5] add for community - community is not pleased
 }
