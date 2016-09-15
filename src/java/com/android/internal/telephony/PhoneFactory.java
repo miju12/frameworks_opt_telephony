@@ -187,8 +187,8 @@ public class PhoneFactory {
                     } else if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
                         phone = telephonyComponentFactory.makePhone(context,
                                 sCommandsInterfaces[i], sPhoneNotifier, i,
-                                PhoneConstants.PHONE_TYPE_CDMA_LTE,
-                                telephonyComponentFactory);
+                                PhoneConstants.PHONE_TYPE_CDMA,
+                                TelephonyComponentFactory.getInstance());
                     }
                     Rlog.i(LOG_TAG, "Creating Phone with type = " + phoneType + " sub = " + i);
 
