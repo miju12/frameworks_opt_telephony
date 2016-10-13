@@ -1183,6 +1183,11 @@ public class SimulatedCommandsVerifier implements CommandsInterface {
     }
 
     @Override
+    public int getLteOnGsmMode() {
+        return 0;
+    }
+
+    @Override
     public void requestIsimAuthentication(String nonce, Message response) {
 
     }
@@ -1287,8 +1292,7 @@ public class SimulatedCommandsVerifier implements CommandsInterface {
     }
 
     @Override
-    public void setUiccSubscription(int slotId, int appIndex, int subId, int subStatus,
-                                    Message result) {
+    public void setUiccSubscription(int appIndex, boolean activate, Message result) {
 
     }
 

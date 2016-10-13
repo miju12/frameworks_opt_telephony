@@ -580,9 +580,7 @@ public class ServiceStateTracker extends Handler {
             mCi.unregisterForAvailable(this);
             mCi.unSetOnRestrictedStateChanged(this);
 
-            if (mPhone.isPhoneTypeCdmaLte()) {
-                mPhone.registerForSimRecordsLoaded(this, EVENT_SIM_RECORDS_LOADED, null);
-            }
+            mPhone.registerForSimRecordsLoaded(this, EVENT_SIM_RECORDS_LOADED, null);
             mCellLoc = new CdmaCellLocation();
             mNewCellLoc = new CdmaCellLocation();
             mCdmaSSM = CdmaSubscriptionSourceManager.getInstance(mPhone.getContext(), mCi, this,
@@ -947,7 +945,11 @@ public class ServiceStateTracker extends Handler {
                 }
                 // This will do nothing in the 'radio not available' case
                 setPowerStateToDesired();
-                modemTriggeredPollState();
+                if (mCi.getRilVersion() >= 10) {
+                    modemTriggeredPollState();
+                } else {
+                    pollState();
+                }
                 break;
 
             case EVENT_NETWORK_STATE_CHANGED:
@@ -3102,7 +3104,8 @@ public class ServiceStateTracker extends Handler {
             if (!hasBrandOverride && (mCi.getRadioState().isOn()) && (mPhone.isEriFileLoaded()) &&
                     (!isRatLte(mSS.getRilVoiceRadioTechnology()) ||
                             mPhone.getContext().getResources().getBoolean(com.android.internal.R.
-                                    bool.config_LTE_eri_for_network_name))) {
+                                    bool.config_LTE_eri_for_network_name)) &&
+                                    !mIsSubscriptionFromRuim) {
                 // Only when CDMA is in service, ERI will take effect
                 String eriText = mSS.getOperatorAlphaLong();
                 // Now the Phone sees the new ServiceState so it can get the new ERI text
@@ -4225,7 +4228,8 @@ public class ServiceStateTracker extends Handler {
     public void powerOffRadioSafely(DcTracker dcTracker) {
         synchronized (this) {
             if (!mPendingRadioPowerOffAfterDataOff) {
-                if (mPhone.isPhoneTypeGsm() || mPhone.isPhoneTypeCdmaLte()) {
+                if (mPhone.isPhoneTypeGsm() || mPhone.isPhoneTypeCdma()
+                        || mPhone.isPhoneTypeCdmaLte()) {
                     int dds = SubscriptionManager.getDefaultDataSubscriptionId();
                     // To minimize race conditions we call cleanUpAllConnections on
                     // both if else paths instead of before this isDisconnected test.

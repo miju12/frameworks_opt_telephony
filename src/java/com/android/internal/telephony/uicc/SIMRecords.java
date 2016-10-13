@@ -1478,6 +1478,31 @@ public class SIMRecords extends IccRecords {
         } else {
             setSpnFromConfig(getOperatorNumeric());
         }
+        setDisplayName();
+    }
+
+    private void setDisplayName() {
+        SubscriptionManager subManager = SubscriptionManager.from(mContext);
+        int[] subId = subManager.getSubId(mParentApp.getPhoneId());
+
+        if ((subId == null) || subId.length <= 0) {
+            log("subId not valid for Phone " + mParentApp.getPhoneId());
+            return;
+        }
+
+        SubscriptionInfo subInfo = subManager.getActiveSubscriptionInfo(subId[0]);
+        if (subInfo != null && subInfo.getNameSource() !=
+                    SubscriptionManager.NAME_SOURCE_USER_INPUT) {
+            CharSequence oldSubName = subInfo.getDisplayName();
+            String newCarrierName = mTelephonyManager.getSimOperatorName(subId[0]);
+
+            if (!TextUtils.isEmpty(newCarrierName) && !newCarrierName.equals(oldSubName)) {
+                log("sim name[" + mParentApp.getPhoneId() + "] = " + newCarrierName);
+                SubscriptionController.getInstance().setDisplayName(newCarrierName, subId[0]);
+            }
+        } else {
+            log("SUB[" + mParentApp.getPhoneId() + "] " + subId[0] + " SubInfo not created yet");
+        }
     }
 
     private void setSpnFromConfig(String carrier) {
@@ -1628,16 +1653,16 @@ public class SIMRecords extends IccRecords {
     @Override
     public int getDisplayRule(String plmn) {
         int rule;
-
-        CarrierConfigManager configLoader = (CarrierConfigManager)
-                mContext.getSystemService(Context.CARRIER_CONFIG_SERVICE);
-        if (configLoader != null && configLoader.getConfig().getBoolean(
-                "config_spn_override_enabled") && !TextUtils.isEmpty(mSpn) &&
-                (mSpnDisplayCondition == -1)) {
-            if (DBG) log("Set mSpnDisplayCondition to 0 for SPN override");
-            mSpnDisplayCondition = 0;
+        if (mContext != null) {
+            CarrierConfigManager configLoader = (CarrierConfigManager)
+                     mContext.getSystemService(Context.CARRIER_CONFIG_SERVICE);
+            if (configLoader != null && configLoader.getConfig().getBoolean(
+                    "config_spn_override_enabled") && !TextUtils.isEmpty(mSpn) &&
+                    (mSpnDisplayCondition == -1)) {
+                if (DBG) log("Set mSpnDisplayCondition to 0 for SPN override");
+                mSpnDisplayCondition = 0;
+            }
         }
-
         if (mParentApp != null && mParentApp.getUiccCard() != null &&
             mParentApp.getUiccCard().getOperatorBrandOverride() != null) {
         // If the operator has been overridden, treat it as the SPN file on the SIM did not exist.
