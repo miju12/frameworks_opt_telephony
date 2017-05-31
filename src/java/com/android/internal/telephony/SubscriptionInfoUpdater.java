@@ -411,10 +411,9 @@ public class SubscriptionInfoUpdater extends Handler {
             updateSubscriptionInfoByIccId();
             int[] subIds = mSubscriptionManager.getActiveSubscriptionIdList();
             for (int subId : subIds) {
-                TelephonyManager tm = TelephonyManager.getDefault();
 
-                String operator = tm.getSimOperatorNumeric(subId);
                 slotId = SubscriptionController.getInstance().getPhoneId(subId);
+                String operator = mPhone[slotId].getOperatorNumeric();
 
                 if (!TextUtils.isEmpty(operator)) {
                     if (subId == SubscriptionController.getInstance().getDefaultSubId()) {
