@@ -417,11 +417,10 @@ public class SubscriptionInfoUpdater extends Handler {
             updateSubscriptionInfoByIccId();
             int[] subIds = mSubscriptionManager.getActiveSubscriptionIdList();
             for (int subId : subIds) {
-
-                slotId = SubscriptionController.getInstance().getPhoneId(subId);
                 String operator = mPhone[slotId].getOperatorNumeric();
+                slotId = SubscriptionController.getInstance().getPhoneId(subId);
 
-                if (!TextUtils.isEmpty(operator)) {
+                if (operator != null && !TextUtils.isEmpty(operator)) {
                     if (subId == SubscriptionController.getInstance().getDefaultSubId()) {
                         MccTable.updateMccMncConfiguration(mContext, operator, false);
                     }
@@ -430,6 +429,7 @@ public class SubscriptionInfoUpdater extends Handler {
                     logd("EVENT_RECORDS_LOADED Operator name is null");
                 }
 
+                TelephonyManager tm = TelephonyManager.getDefault();
                 String msisdn = tm.getLine1Number(subId);
                 ContentResolver contentResolver = mContext.getContentResolver();
 
