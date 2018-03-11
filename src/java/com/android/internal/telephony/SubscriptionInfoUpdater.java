@@ -712,19 +712,9 @@ public class SubscriptionInfoUpdater extends Handler {
             }
         }
 
-        if (!mIsShutdown && insertedSimCount == 1) {
-            SubscriptionInfo sir = subInfos.get(0);
-            if (sir != null) {
-                int subId = sir.getSubscriptionId();
-                mSubscriptionManager.setDefaultDataSubId(subId);
-                mSubscriptionManager.setDefaultVoiceSubId(subId);
-                mSubscriptionManager.setDefaultSmsSubId(subId);
-            }
-        } else {
             // Ensure the modems are mapped correctly
             mSubscriptionManager.setDefaultDataSubId(
                     mSubscriptionManager.getDefaultDataSubscriptionId());
-        }
 
         // No need to check return value here as we notify for the above changes anyway.
         updateEmbeddedSubscriptions();
