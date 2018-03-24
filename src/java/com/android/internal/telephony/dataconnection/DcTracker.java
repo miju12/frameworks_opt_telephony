@@ -1248,11 +1248,7 @@ public class DcTracker extends Handler {
 
     private boolean isNvSubscription() {
         int cdmaSubscriptionSource = CdmaSubscriptionSourceManager.getDefault(mPhone.getContext());
-        if (cdmaSubscriptionSource ==
-                CdmaSubscriptionSourceManager.SUBSCRIPTION_FROM_NV) {
-            return true;
-        }
-        return false;
+        return cdmaSubscriptionSource == CdmaSubscriptionSourceManager.SUBSCRIPTION_FROM_NV;
     }
 
     /**
@@ -1299,7 +1295,6 @@ public class DcTracker extends Handler {
         }
 
         boolean recordsLoaded = mIccRecords.get() != null && mIccRecords.get().getRecordsLoaded();
-        boolean subscriptionFromNv = isNvSubscription();
 
         boolean defaultDataSelected = SubscriptionManager.isValidSubscriptionId(
                 SubscriptionManager.getDefaultDataSubscriptionId());
@@ -1352,7 +1347,7 @@ public class DcTracker extends Handler {
         if (!(attachedState || mAutoAttachOnCreation.get())) {
             reasons.add(DataDisallowedReasonType.NOT_ATTACHED);
         }
-        if (!(recordsLoaded || subscriptionFromNv)) {
+        if (!(recordsLoaded || isNvSubscription())) {
             reasons.add(DataDisallowedReasonType.RECORD_NOT_LOADED);
         }
         if (phoneState != PhoneConstants.State.IDLE
